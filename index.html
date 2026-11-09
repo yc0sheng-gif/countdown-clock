@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a2b">
+  <meta name="description" content="跨平台大型時鐘式倒數計時器">
+  <title>大型時鐘倒數計時器</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-dot"></span> 大型時鐘倒數計時器</div>
+      <div class="top-actions">
+        <button id="fullscreenBtn" class="icon-btn" title="全螢幕" aria-label="全螢幕">⛶</button>
+        <button id="settingsBtn" class="icon-btn" title="聲音與時間設定" aria-label="設定">⚙</button>
+      </div>
+    </header>
+
+    <section class="clock-area">
+      <div class="clock-shell" id="clockShell">
+        <svg class="clock-svg" viewBox="0 0 600 600" aria-hidden="true">
+          <circle class="clock-track" cx="300" cy="300" r="270"></circle>
+          <circle id="clockProgress" class="clock-progress" cx="300" cy="300" r="270"></circle>
+          <circle class="clock-inner" cx="300" cy="300" r="225"></circle>
+        </svg>
+        <div id="clockFill" class="clock-fill" aria-hidden="true"></div>
+        <div class="clock-center">
+          <div id="timerDisplay" class="timer-display">05:00</div>
+          <div id="timerName" class="timer-name">煮菜</div>
+          <div id="statusText" class="status-text">準備就緒</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="main-controls">
+        <button id="startPauseBtn" class="primary-btn">開始</button>
+        <button id="restartBtn" class="control-btn">重來</button>
+        <button id="stopBtn" class="control-btn">結束</button>
+      </div>
+      <div class="quick-title">快速切換時間</div>
+      <div id="quickButtons" class="quick-buttons"></div>
+      <div class="custom-row">
+        <button id="customBtn" class="text-btn">＋ 自訂倒數</button>
+        <button id="installBtn" class="text-btn hidden">安裝到裝置</button>
+      </div>
+    </section>
+
+    <footer>時間歸零時自動提示 · 設定會保存在本機</footer>
+  </main>
+
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog" class="dialog-card" id="settingsForm">
+      <div class="dialog-heading"><h2>設定</h2><button class="close-btn" value="cancel" aria-label="關閉">×</button></div>
+      <h3>滴答聲</h3>
+      <label class="switch-line"><span>每秒滴答聲</span><input id="tickEnabled" type="checkbox" checked></label>
+      <label class="range-line"><span>滴答聲音量 <b id="tickVolumeText">35%</b></span><input id="tickVolume" type="range" min="0" max="100" value="35"></label>
+      <p class="hint">剩餘 30% 開始逐漸加快；剩餘 10% 以下達到正常速度的 2 倍。</p>
+      <hr>
+      <h3>時間到達提示音</h3>
+      <label class="field">鈴聲種類
+        <select id="alarmType">
+          <option value="bright">清脆鈴聲</option>
+          <option value="soft">柔和鈴聲</option>
+          <option value="double">連續雙響</option>
+        </select>
+      </label>
+      <label class="range-line"><span>提示音音量 <b id="alarmVolumeText">75%</b></span><input id="alarmVolume" type="range" min="0" max="100" value="75"></label>
+      <label class="field">播放方式
+        <select id="alarmMode">
+          <option value="once">播放一次</option>
+          <option value="long">延長播放</option>
+          <option value="repeat">重複播放 5 次</option>
+        </select>
+      </label>
+      <p class="hint">延長播放約 8 秒；重複播放共 5 次。</p>
+      <div class="dialog-actions">
+        <button type="button" id="testAlarmBtn" class="control-btn">試聽提示音</button>
+        <button value="cancel" class="primary-btn">完成</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="customDialog" class="dialog">
+    <form method="dialog" class="dialog-card" id="customForm">
+      <div class="dialog-heading"><h2>自訂倒數</h2><button class="close-btn" value="cancel" aria-label="關閉">×</button></div>
+      <label class="field">名稱<input id="customName" maxlength="16" value="自訂時間" required></label>
+      <div class="time-inputs">
+        <label class="field">時<input id="customHours" type="number" min="0" max="99" value="0"></label>
+        <label class="field">分<input id="customMinutes" type="number" min="0" max="59" value="5"></label>
+        <label class="field">秒<input id="customSeconds" type="number" min="0" max="59" value="0"></label>
+      </div>
+      <label class="field">時鐘顏色<input id="customColor" type="color" value="#39c6a5"></label>
+      <div class="dialog-actions"><button value="cancel" class="control-btn">取消</button><button id="saveCustomBtn" value="default" class="primary-btn">開始倒數</button></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
