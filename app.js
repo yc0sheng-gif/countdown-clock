@@ -2,10 +2,10 @@
   "use strict";
   const $ = id => document.getElementById(id);
   const themes = [
-    { name: "亮紅", bg: "#ff1744", accent: "#ff1744" }, { name: "活力橘", bg: "#ff9100", accent: "#ff9100" },
-    { name: "陽光黃", bg: "#f4d600", accent: "#f4d600" }, { name: "翠綠", bg: "#00c853", accent: "#00c853" },
-    { name: "亮青", bg: "#00cfe8", accent: "#00cfe8" }, { name: "電光藍", bg: "#2962ff", accent: "#2962ff" },
-    { name: "鮮紫", bg: "#d500f9", accent: "#d500f9" }, { name: "桃紅", bg: "#f5008f", accent: "#f5008f" }
+    { name: "亮紅", bg: "#ff1744", accent: "#ff1744", ink: "#10131a" }, { name: "活力橘", bg: "#ff9100", accent: "#ff9100", ink: "#10131a" },
+    { name: "陽光黃", bg: "#f4d600", accent: "#f4d600", ink: "#10131a" }, { name: "翠綠", bg: "#00c853", accent: "#00c853", ink: "#10131a" },
+    { name: "亮青", bg: "#00cfe8", accent: "#00cfe8", ink: "#10131a" }, { name: "電光藍", bg: "#2962ff", accent: "#2962ff", ink: "#ffffff" },
+    { name: "鮮紫", bg: "#d500f9", accent: "#d500f9", ink: "#10131a" }, { name: "桃紅", bg: "#f5008f", accent: "#f5008f", ink: "#10131a" }
   ];
   const alarmNames = ["清亮鈴音", "柔和鐘聲", "雙響提示", "上揚音階", "下降音階", "古典鐘聲", "電子脈衝", "木琴提示", "水晶音", "警示節拍", "晨間和弦", "歡快旋律", "傳統鬧鐘", "雙鈴急響", "電子蜂鳴", "清晨警報", "急促上行", "三段警鈴", "金屬鬧鈴", "高頻喚醒"];
   const defaults = Array.from({length:4}, () => ({seconds:0}));
@@ -37,7 +37,7 @@
   function fmt(n){n=Math.max(0,Math.ceil(n));const h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
   function setStatus(s){$("statusText").textContent=s;}
   function render(){
-    $("timerDisplay").textContent=fmt(remaining); document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);
+    const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",themes[themeIndex].ink);
     const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
     $("clockFill").style.height = `${fill * 100}%`;
     $("startPauseBtn").textContent=running?"暫停":(finished?"再開始":(remaining>0&&remaining<duration?"繼續":"開始"));
@@ -46,12 +46,12 @@
   function renderSlots(){
     const wrap=$("quickButtons");wrap.innerHTML="";
     timers.forEach((t,i)=>{
-      const b=document.createElement("button");b.className="quick-btn";b.dataset.index=i;b.textContent=t.seconds?fmt(t.seconds):"--:--";b.setAttribute("aria-label",`第 ${i+1} 組：${t.seconds?fmt(t.seconds):"未設定，長按兩秒編輯"}`);
+      const b=document.createElement("button");b.className="quick-btn";b.dataset.index=i;const label=document.createElement("span");label.className="slot-time";label.textContent=t.seconds?fmt(t.seconds):"--:--";b.classList.toggle("long-time",label.textContent.length>5);b.appendChild(label);b.setAttribute("aria-label",`第 ${i+1} 組：${t.seconds?fmt(t.seconds):"未設定，長按兩秒編輯"}`);
       let holdTimer=null, keyboardHoldTimer=null, didLongPress=false;
       const beginHold=()=>{didLongPress=false;clearTimeout(holdTimer);holdTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},2000);};
       const clearHold=()=>{clearTimeout(holdTimer);clearTimeout(keyboardHoldTimer);};
-      b.addEventListener("pointerdown",e=>{if(e.button!==undefined&&e.button!==0)return;beginHold();});
-      ["pointerup","pointerleave","pointercancel"].forEach(type=>b.addEventListener(type,clearHold));
+      b.addEventListener("pointerdown",e=>{if(e.button!==undefined&&e.button!==0)return;try{b.setPointerCapture(e.pointerId);}catch(_){}beginHold();});
+      ["pointerup","pointercancel","lostpointercapture"].forEach(type=>b.addEventListener(type,clearHold));
       b.addEventListener("keydown",e=>{if(e.code==="Space"&&!e.repeat){e.preventDefault();didLongPress=false;keyboardHoldTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},2000);}});
       b.addEventListener("keyup",e=>{if(e.code==="Space")clearHold();});
       b.addEventListener("contextmenu",e=>e.preventDefault());
