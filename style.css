@@ -16,3 +16,26 @@
   .app[data-clock-size="fullscreen"]{padding:0}
   .app[data-clock-size="fullscreen"] .clock-shell{width:100vw;height:100vh;height:100dvh;min-height:0;max-width:none;border-radius:0;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 16px)}
 }
+/* Larger, easier-to-read type and touch targets throughout the clock. */
+body{font-size:18px}
+.brand{font-size:clamp(19px,2.5vw,24px)}
+.icon-btn{width:52px;height:52px;font-size:28px}
+.timer-display{font-size:clamp(96px,22vw,240px)}
+.status-text{font-size:clamp(18px,2.5vw,23px)}
+.quick-btn{min-height:56px;font-size:clamp(18px,2.4vw,23px)}
+.primary-btn,.control-btn{min-height:58px;font-size:19px;padding:14px 24px}
+.main-controls .control-btn{font-size:30px}
+.text-btn{font-size:18px;padding:10px 16px}
+.dialog-heading h2{font-size:25px}
+.dialog-card h3{font-size:20px}
+.dialog-card,.field,.switch-line,.range-line{font-size:18px}
+.field input,.field select{font-size:18px;min-height:50px}
+.hint{font-size:15px}
+.close-btn{font-size:38px}
+.theme-swatch{min-height:56px}
+@media(max-width:600px){
+ .timer-display{font-size:clamp(78px,19vw,136px)}
+ .quick-btn{min-height:52px;font-size:clamp(17px,4.6vw,21px)}
+ .main-controls .control-btn{font-size:29px}
+ .primary-btn,.control-btn{min-height:54px;padding:12px 18px}
+}
