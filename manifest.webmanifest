@@ -1,0 +1,19 @@
+{
+  "name": "大型時鐘倒數計時器",
+  "short_name": "倒數時鐘",
+  "description": "跨平台大型時鐘式倒數計時器",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101a2b",
+  "theme_color": "#101a2b",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
