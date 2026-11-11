@@ -73,3 +73,28 @@ body{font-size:23.4px}
  .main-controls .primary-btn,.main-controls .control-btn{min-height:70px;padding:14px 18px}
  .main-controls .control-btn{font-size:39px}
 }
+/* Latest size request: reduce the enlarged copy by 20 percent. */
+body{font-size:18.72px}
+.brand{font-size:clamp(19.76px,2.6vw,24.96px)}
+.icon-btn{font-size:29.12px}
+.timer-display{font-size:clamp(99.84px,22.88vw,249.6px)}
+.status-text{font-size:clamp(18.72px,2.6vw,23.92px)}
+.quick-btn{font-size:clamp(16.848px,2.2464vw,21.528px)}
+.main-controls .primary-btn,.main-controls .control-btn{font-size:19.76px}
+.main-controls .control-btn{font-size:31.2px}
+.text-btn{font-size:18.72px}
+.dialog-heading h2{font-size:26px}
+.dialog-card h3{font-size:20.8px}
+.dialog-card,.field,.switch-line,.range-line{font-size:18.72px}
+.field input,.field select{font-size:18.72px}
+.hint{font-size:15.6px}
+.close-btn{font-size:39.2px}
+.preview-alarm-btn{font-size:19.76px}
+.dialog-actions .primary-btn,.dialog-actions .control-btn{font-size:19.76px}
+.quick-btn.running{color:var(--clock-theme-ink)}
+@media(max-width:600px){
+ .timer-display{font-size:clamp(81.12px,19.76vw,141.44px)}
+ .quick-btn{font-size:clamp(15.912px,4.3056vw,19.656px)}
+ .main-controls .primary-btn,.main-controls .control-btn{min-height:70px;padding:14px 18px}
+ .main-controls .control-btn{font-size:31.2px}
+}

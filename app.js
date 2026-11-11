@@ -13,6 +13,8 @@
   let timers = Array.isArray(stored.timers) ? Array.from({length:4}, (_,i) => ({seconds: Math.max(0, Number(stored.timers[i]?.seconds)||0)})) : defaults;
   let sound = {tickEnabled:true,tickVolume:70,alarmType:"bright",alarmVolume:75,alarmMode:"repeat",...(stored.sound||{})};
   let themeIndex = Number.isInteger(stored.themeIndex) && stored.themeIndex >= 0 && stored.themeIndex < 8 ? stored.themeIndex : 0;
+  const textColorChoices=["#111111","#ffffff","#d9dde3","#f0f1f3","#ff6fae","#ffe45e","#70d6ff","#7cffb2"];
+  let buttonTextColor=textColorChoices.includes(String(stored.buttonTextColor))?String(stored.buttonTextColor):themes[themeIndex].ink;
   let clockSize = ["0.6","0.7","0.8","0.9","fullscreen"].includes(String(stored.clockSize)) ? String(stored.clockSize) : "0.9";
   let selectedIndex = Number.isInteger(stored.selectedIndex) && stored.selectedIndex >= 0 && stored.selectedIndex < 4 ? stored.selectedIndex : -1;
   let editingSlotIndex = 0;
@@ -32,12 +34,12 @@
     [[1568,.17],[1319,.17],[1568,.17],[1319,.17],[1760,.28],[1568,.38]],
     [[988,.14],[740,.14],[988,.14],[740,.14],[1175,.14],[880,.14],[1175,.32]]
   ];
-  function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,sound,themeIndex,clockSize,selectedIndex}));}
+  function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,sound,themeIndex,clockSize,buttonTextColor,selectedIndex}));}
   function applyClockSize(){$("app").dataset.clockSize=clockSize;}
   function fmt(n){n=Math.max(0,Math.ceil(n));const h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
   function setStatus(s){$("statusText").textContent=s;}
   function render(){
-    const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",themes[themeIndex].ink);
+    const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);
     const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
     $("clockFill").style.height = `${fill * 100}%`;
     $("startPauseBtn").textContent=running?"暫停":(finished?"再開始":(remaining>0&&remaining<duration?"繼續":"開始"));
@@ -48,11 +50,11 @@
     timers.forEach((t,i)=>{
       const b=document.createElement("button");b.className="quick-btn";b.dataset.index=i;const label=document.createElement("span");label.className="slot-time";label.textContent=t.seconds?fmt(t.seconds):"--:--";b.classList.toggle("long-time",label.textContent.length>5);b.appendChild(label);b.setAttribute("aria-label",`第 ${i+1} 組：${t.seconds?fmt(t.seconds):"未設定，長按兩秒編輯"}`);
       let holdTimer=null, keyboardHoldTimer=null, didLongPress=false;
-      const beginHold=()=>{didLongPress=false;clearTimeout(holdTimer);holdTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},2000);};
+      const beginHold=()=>{didLongPress=false;clearTimeout(holdTimer);holdTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},1200);};
       const clearHold=()=>{clearTimeout(holdTimer);clearTimeout(keyboardHoldTimer);};
       b.addEventListener("pointerdown",e=>{if(e.button!==undefined&&e.button!==0)return;try{b.setPointerCapture(e.pointerId);}catch(_){}beginHold();});
       ["pointerup","pointercancel","lostpointercapture"].forEach(type=>b.addEventListener(type,clearHold));
-      b.addEventListener("keydown",e=>{if(e.code==="Space"&&!e.repeat){e.preventDefault();didLongPress=false;keyboardHoldTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},2000);}});
+      b.addEventListener("keydown",e=>{if(e.code==="Space"&&!e.repeat){e.preventDefault();didLongPress=false;keyboardHoldTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},1200);}});
       b.addEventListener("keyup",e=>{if(e.code==="Space")clearHold();});
       b.addEventListener("contextmenu",e=>e.preventDefault());
       b.addEventListener("click",()=>{if(didLongPress){didLongPress=false;return;}if(!t.seconds){setStatus("長按這組時間兩秒即可編輯");return;}selectSlot(i,true);});
@@ -81,9 +83,10 @@
   function releaseWakeLock(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}}
   function openTimerEditor(i){editingSlotIndex=i;if(running&&selectedIndex===i)pause();const t=timers[i],wrap=$("timerFields");$("timerDialogTitle").textContent=`設定第 ${i+1} 組時間`;wrap.innerHTML="";const row=document.createElement("div");row.className="timer-edit-row";row.innerHTML=`<label class="field">時<input data-part="h" type="number" min="0" max="99" value="${Math.floor(t.seconds/3600)}"></label><label class="field">分<input data-part="m" type="number" min="0" max="59" value="${Math.floor(t.seconds%3600/60)}"></label><label class="field">秒<input data-part="s" type="number" min="0" max="59" value="${t.seconds%60}"></label>`;wrap.appendChild(row);$("timerDialog").showModal();}
   $("startPauseBtn").addEventListener("click",()=>running?pause():start());$("restartBtn").addEventListener("click",restart);$("stopBtn").addEventListener("click",stop);
-  $("settingsBtn").addEventListener("click",()=>{$("tickEnabled").checked=sound.tickEnabled;$("tickVolume").value=sound.tickVolume;$("tickVolumeText").textContent=sound.tickVolume+"%";$("alarmType").value=sound.alarmType;$("alarmVolume").value=sound.alarmVolume;$("alarmVolumeText").textContent=sound.alarmVolume+"%";$("alarmMode").value=sound.alarmMode;$("clockSize").value=clockSize;$("settingsDialog").showModal();});
+  $("settingsBtn").addEventListener("click",()=>{$("tickEnabled").checked=sound.tickEnabled;$("tickVolume").value=sound.tickVolume;$("tickVolumeText").textContent=sound.tickVolume+"%";$("alarmType").value=sound.alarmType;$("alarmVolume").value=sound.alarmVolume;$("alarmVolumeText").textContent=sound.alarmVolume+"%";$("alarmMode").value=sound.alarmMode;$("clockSize").value=clockSize;$("buttonTextColor").value=buttonTextColor;$("settingsDialog").showModal();});
   $("clockSize").addEventListener("change",()=>{clockSize=$("clockSize").value;applyClockSize();save();});
-  $("settingsForm").addEventListener("submit",()=>{sound={tickEnabled:$("tickEnabled").checked,tickVolume:Number($("tickVolume").value),alarmType:$("alarmType").value,alarmVolume:Number($("alarmVolume").value),alarmMode:$("alarmMode").value};clockSize=$("clockSize").value;applyClockSize();save();if(running){stopTicker();scheduleTick();}});
+  $("buttonTextColor").addEventListener("change",()=>{buttonTextColor=$("buttonTextColor").value;render();save();});
+  $("settingsForm").addEventListener("submit",()=>{sound={tickEnabled:$("tickEnabled").checked,tickVolume:Number($("tickVolume").value),alarmType:$("alarmType").value,alarmVolume:Number($("alarmVolume").value),alarmMode:$("alarmMode").value};clockSize=$("clockSize").value;buttonTextColor=$("buttonTextColor").value;applyClockSize();render();save();if(running){stopTicker();scheduleTick();}});
   $("alarmType").innerHTML=alarmNames.map((n,i)=>`<option value="${n}">${String(i+1).padStart(2,"0")} · ${n}</option>`).join("");if(!alarmNames.includes(sound.alarmType))sound.alarmType=alarmNames[0];
   $("tickVolume").addEventListener("input",e=>$("tickVolumeText").textContent=e.target.value+"%");$("alarmVolume").addEventListener("input",e=>$("alarmVolumeText").textContent=e.target.value+"%");
   $("testAlarmBtn").addEventListener("click",()=>{sound.alarmType=$("alarmType").value;sound.alarmVolume=Number($("alarmVolume").value);playAlarmOnce();});
