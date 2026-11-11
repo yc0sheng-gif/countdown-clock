@@ -48,6 +48,7 @@
       <hr>
       <h3>時間到達提示音</h3>
       <label class="field">鈴聲種類<select id="alarmType"></select></label>
+      <button type="button" id="testAlarmBtn" class="control-btn preview-alarm-btn">試聽提示音</button>
       <label class="range-line"><span>提示音音量 <b id="alarmVolumeText">75%</b></span><input id="alarmVolume" type="range" min="0" max="100" value="75"></label>
       <label class="field">播放方式<select id="alarmMode"><option value="once">播放一次</option><option value="long">延長播放</option><option value="repeat">重複播放 5 次</option></select></label>
       <hr>
@@ -57,7 +58,7 @@
       <h3>時鐘底色</h3>
       <p class="hint">倒數時，亮色填充會隨剩餘時間逐漸縮小。</p>
       <div id="themeButtons" class="theme-buttons" aria-label="時鐘底色"></div>
-      <div class="dialog-actions"><button type="button" id="testAlarmBtn" class="control-btn">試聽提示音</button><button value="cancel" class="primary-btn">完成</button></div>
+      <div class="dialog-actions"><button value="cancel" class="primary-btn">完成</button></div>
     </form>
   </dialog>
 

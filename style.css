@@ -33,6 +33,7 @@ body{font-size:18px}
 .hint{font-size:15px}
 .close-btn{font-size:38px}
 .theme-swatch{min-height:56px}
+.preview-alarm-btn{width:100%;margin:-4px 0 10px}
 .icon-btn{display:grid;place-items:center;line-height:1;padding:0}
 .bottom-actions{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
 .quick-btn.running{color:#ff4fa3}
