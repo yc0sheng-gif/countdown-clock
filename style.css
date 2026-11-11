@@ -98,3 +98,13 @@ body{font-size:18.72px}
  .main-controls .primary-btn,.main-controls .control-btn{min-height:70px;padding:14px 18px}
  .main-controls .control-btn{font-size:31.2px}
 }
+/* Refine the time editor and action controls. */
+.timer-edit-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+.quick-btn{font-size:clamp(16.0056px,2.13408vw,20.4516px)}
+.main-controls .primary-btn,.main-controls .control-btn{min-height:40.6px;padding:2px 24px;line-height:1}
+.main-controls .control-btn{font-size:31.2px}
+.text-color-swatch{background:var(--swatch)}
+@media(max-width:600px){
+ .quick-btn{font-size:clamp(15.1164px,4.09032vw,18.6732px)}
+ .main-controls .primary-btn,.main-controls .control-btn{min-height:49px;padding:4px 18px;line-height:1}
+}
