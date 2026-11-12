@@ -27,19 +27,20 @@
   let running=false, finished=false, endAt=0, rafId=null, tickTimer=null, lastTickAt=0, audioCtx=null, alarmBus=null, alarmLimiter=null, alarmTimeouts=[], wakeLock=null, deferredInstall=null;
   let settingsSnapshot=null;
   const alarmPatterns = [
-    [[1047,.16],[1319,.22],[1568,.42]], [[659,.55],[784,.65]], [[880,.22],[660,.22],[880,.5]], [[523,.18],[659,.18],[784,.18],[1047,.45]],
-    [[1047,.2],[784,.2],[659,.2],[523,.45]], [[784,.32],[988,.32],[1175,.65]], [[1200,.09],[0,.08],[1200,.09],[0,.08],[1500,.3]],
-    [[784,.2],[988,.2],[1175,.35],[988,.5]], [[1319,.25],[1760,.3],[1568,.45]], [[880,.12],[0,.1],[880,.12],[0,.1],[880,.35]],
+    [[1047,.16],[1319,.22],[1568,.42]], [[523,.28],[659,.3],[784,.35],[1047,.7]], [[880,.22],[660,.22],[880,.5]], [[523,.18],[659,.18],[784,.18],[1047,.45]],
+    [[1047,.2],[784,.2],[659,.2],[523,.45]], [[659,.3],[784,.3],[988,.3],[1319,.55],[988,.25],[1175,.7]], [[1397,.18],[1047,.26],[1175,.2],[1568,.5]],
+    [[784,.25],[988,.24],[1175,.34],[988,.24],[1319,.55]], [[1047,.22],[1319,.25],[1568,.4],[2093,.52],[1760,.65]], [[784,.28],[988,.28],[1175,.28],[988,.28],[784,.65]],
     [[523,.23],[659,.23],[784,.23],[1047,.65]], [[659,.18],[784,.18],[988,.18],[1319,.25],[1047,.45]],
     [[880,.12],[0,.06],[880,.12],[0,.06],[988,.12],[0,.06],[880,.12],[0,.06],[988,.3]],
     [[784,.16],[988,.16],[784,.16],[988,.16],[1175,.32],[988,.16],[1175,.32]],
-    [[1320,.18],[0,.07],[1320,.18],[0,.07],[1568,.2],[0,.07],[1320,.36]],
-    [[740,.2],[0,.08],[740,.2],[0,.08],[988,.2],[0,.08],[740,.2],[0,.08],[988,.4]],
-    [[523,.13],[659,.13],[784,.13],[988,.13],[1175,.22],[988,.13],[1175,.3]],
-    [[1047,.12],[0,.05],[1047,.12],[0,.05],[784,.12],[0,.05],[1047,.12],[0,.05],[784,.3]],
-    [[1568,.17],[1319,.17],[1568,.17],[1319,.17],[1760,.28],[1568,.38]],
+    [[659,.25],[784,.25],[988,.4],[1319,.55]],
+    [[523,.35],[659,.35],[784,.35],[1047,.6],[784,.3],[1047,.75]],
+    [[587,.3],[698,.3],[880,.32],[1047,.45],[880,.3],[1047,.65]],
+    [[784,.22],[988,.22],[1175,.4],[988,.22],[1319,.65]],
+    [[880,.28],[1047,.28],[1319,.45],[1175,.28],[1568,.7]],
     [[988,.14],[740,.14],[988,.14],[740,.14],[1175,.14],[880,.14],[1175,.32]]
   ];
+  const gentleAlarmIndexes=new Set([1,5,6,7,8,9,14,15,16,17,18]);
   function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,sound,themeIndex,clockSize,buttonTextColor,runningTimeColor,textSizes,selectedIndex}));}
   function applyClockSize(){$("app").dataset.clockSize=clockSize;}
   function applyTextSizes(){const app=$("app");app.dataset.clockDigitSize=textSizes.clockDigit;app.dataset.slotDigitSize=textSizes.slotDigit;app.dataset.controlTextSize=textSizes.controlText;app.dataset.settingsIconSize=textSizes.settingsIcon;}
@@ -85,7 +86,7 @@
   function stopTicker(){clearTimeout(tickTimer);tickTimer=null;lastTickAt=0;}
   function getAlarmBus(){const ctx=getAudio();if(!ctx)return null;if(!alarmBus){alarmBus=ctx.createGain();alarmBus.gain.value=1;alarmLimiter=ctx.createDynamicsCompressor();alarmLimiter.threshold.value=-2;alarmLimiter.knee.value=0;alarmLimiter.ratio.value=20;alarmLimiter.attack.value=.002;alarmLimiter.release.value=.08;alarmBus.connect(alarmLimiter);alarmLimiter.connect(ctx.destination);}return alarmBus;}
   function stopAlarm(){alarmTimeouts.forEach(clearTimeout);alarmTimeouts=[];if(alarmBus&&audioCtx){alarmBus.gain.cancelScheduledValues(audioCtx.currentTime);alarmBus.gain.setTargetAtTime(0,audioCtx.currentTime,.006);}}
-  function playAlarmOnce(){const ctx=getAudio(),bus=getAlarmBus();if(!ctx||!bus)return;bus.gain.cancelScheduledValues(ctx.currentTime);bus.gain.setValueAtTime(1,ctx.currentTime);const index=Math.max(0,alarmNames.indexOf(sound.alarmType)),pattern=alarmPatterns[index],wave=index>=12?(index%2?"sawtooth":"square"):"sine",vol=(sound.alarmVolume/100)*.39;let at=ctx.currentTime+.04;pattern.forEach(([f,d])=>{if(f) {tone(f,at,d,vol,wave,f*.98,bus);tone(f*2,at,d*.72,vol*.2,"sine",null,bus);}at+=d+.04;});}
+  function playAlarmOnce(){const ctx=getAudio(),bus=getAlarmBus();if(!ctx||!bus)return;bus.gain.cancelScheduledValues(ctx.currentTime);bus.gain.setValueAtTime(1,ctx.currentTime);const index=Math.max(0,alarmNames.indexOf(sound.alarmType)),pattern=alarmPatterns[index],wave=gentleAlarmIndexes.has(index)?"sine":index>=12?(index%2?"sawtooth":"square"):"sine",vol=(sound.alarmVolume/100)*.39;let at=ctx.currentTime+.04;pattern.forEach(([f,d])=>{if(f) {tone(f,at,d,vol,wave,f*.98,bus);tone(f*2,at,d*.72,vol*.2,"sine",null,bus);}at+=d+.04;});}
   function playAlarm(){stopAlarm();const count=sound.alarmMode==="once"?1:5,spacing=sound.alarmMode==="long"?1.75:1.65;for(let i=0;i<count;i++)if(i===0)playAlarmOnce();else alarmTimeouts.push(setTimeout(playAlarmOnce,i*spacing*1000));}
   function start(){if(selectedIndex<0||!duration){setStatus("請先編輯並選擇時間");return;}if(remaining<=0||finished){remaining=duration;finished=false;}getAudio();running=true;endAt=Date.now()+remaining*1000;setStatus("倒數進行中");lastTickAt=0;scheduleTick();acquireWakeLock();cancelAnimationFrame(rafId);loop();render();}
   function pause(){if(!running)return;remaining=Math.max(0,(endAt-Date.now())/1000);running=false;cancelAnimationFrame(rafId);stopTicker();releaseWakeLock();setStatus("已暫停");render();}
