@@ -1,4 +1,4 @@
-const CACHE_NAME = "countdown-clock-v13";
+const CACHE_NAME = "countdown-clock-v14";
 const ASSETS = ["./", "./index.html", "./style.css", "./app.js", "./manifest.webmanifest", "./icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));

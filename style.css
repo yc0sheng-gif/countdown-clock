@@ -143,3 +143,28 @@ body{font-size:18.72px}
 .app[data-slot-digit-size="mediumLarge"] .quick-btn{font-size:clamp(16.628px,4.49935vw,20.5405px)}
  .app[data-slot-digit-size="large"] .quick-btn{font-size:clamp(17.38px,4.704vw,21.4742px)}
 }
+/* Balanced five-step type scale; the largest choice is 30 percent above the previous maximum. */
+.app[data-clock-digit-size="medium"] .timer-display{font-size:clamp(116.3136px,26.6552vw,290.784px)}
+.app[data-clock-digit-size="mediumLarge"] .timer-display{font-size:clamp(132.7872px,30.4304vw,331.968px)}
+.app[data-clock-digit-size="large"] .timer-display{font-size:clamp(149.2608px,34.2056vw,373.152px)}
+.app[data-slot-digit-size="medium"] .quick-btn{font-size:clamp(18.6465px,2.48671vw,23.8251px)}
+.app[data-slot-digit-size="mediumLarge"] .quick-btn{font-size:clamp(21.2874px,2.83893vw,27.2006px)}
+.app[data-slot-digit-size="large"] .quick-btn{font-size:clamp(23.9284px,3.18945vw,30.5751px)}
+.app[data-control-text-size="medium"] .main-controls .primary-btn{font-size:23.0204px}
+.app[data-control-text-size="mediumLarge"] .main-controls .primary-btn{font-size:26.2808px}
+.app[data-control-text-size="large"] .main-controls .primary-btn{font-size:29.5412px}
+.app[data-control-text-size="medium"] .main-controls .control-btn{font-size:36.348px}
+.app[data-control-text-size="mediumLarge"] .main-controls .control-btn{font-size:41.496px}
+.app[data-control-text-size="large"] .main-controls .control-btn{font-size:46.644px}
+.app[data-settings-icon-size="medium"] .icon-btn{font-size:33.9248px}
+.app[data-settings-icon-size="mediumLarge"] .icon-btn{font-size:38.7296px}
+.app[data-settings-icon-size="large"] .icon-btn{font-size:43.5224px}
+.icon-btn,.quick-btn,.main-controls .primary-btn,.main-controls .control-btn{background:linear-gradient(to top,var(--clock-theme-bg) 0%,var(--clock-theme-bg) var(--fill-ratio,0%),#151c29 var(--fill-ratio,0%),#151c29 100%)}
+@media(max-width:600px){
+ .app[data-clock-digit-size="medium"] .timer-display{font-size:clamp(94.5048px,23.0204vw,164.7776px)}
+ .app[data-clock-digit-size="mediumLarge"] .timer-display{font-size:clamp(107.8896px,26.2808vw,188.1152px)}
+ .app[data-clock-digit-size="large"] .timer-display{font-size:clamp(121.2744px,29.5412vw,211.4528px)}
+ .app[data-slot-digit-size="medium"] .quick-btn{font-size:clamp(17.6106px,4.76522vw,21.7543px)}
+ .app[data-slot-digit-size="mediumLarge"] .quick-btn{font-size:clamp(20.1048px,5.44013vw,24.8354px)}
+ .app[data-slot-digit-size="large"] .quick-btn{font-size:clamp(22.599px,6.11503vw,27.9169px)}
+}

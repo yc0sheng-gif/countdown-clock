@@ -18,7 +18,8 @@
   const sizeOptions=["small","normal","medium","mediumLarge","large"],savedTextSizes=stored.textSizes||{};
   const readTextSize=k=>sizeOptions.includes(savedTextSizes[k])?savedTextSizes[k]:"normal";
   let textSizes={clockDigit:readTextSize("clockDigit"),slotDigit:readTextSize("slotDigit"),controlText:readTextSize("controlText"),settingsIcon:readTextSize("settingsIcon")};
-  let runningTimeColor=textColorChoices.some(c=>c.color===String(stored.runningTimeColor))?String(stored.runningTimeColor):"#ff6fae";
+  const runningColorChoices=themes.map(t=>({name:t.name,color:t.bg}));
+  let runningTimeColor=runningColorChoices.some(c=>c.color===String(stored.runningTimeColor))?String(stored.runningTimeColor):themes[0].bg;
   let clockSize = ["0.6","0.7","0.8","0.9","fullscreen"].includes(String(stored.clockSize)) ? String(stored.clockSize) : "0.9";
   let selectedIndex = Number.isInteger(stored.selectedIndex) && stored.selectedIndex >= 0 && stored.selectedIndex < 4 ? stored.selectedIndex : -1;
   let editingSlotIndex = 0;
@@ -47,7 +48,7 @@
     const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);document.documentElement.style.setProperty("--running-time-ink",runningTimeColor);
     $("app").dataset.running=running?"true":"false";
     const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
-    $("clockFill").style.height = `${fill * 100}%`;
+    $("clockFill").style.height = `${fill * 100}%`;document.documentElement.style.setProperty("--fill-ratio",`${fill*100}%`);
     $("startPauseBtn").textContent=running?"暫停":(finished?"再開始":(remaining>0&&remaining<duration?"繼續":"開始"));
     document.querySelectorAll(".quick-btn").forEach((b,i)=>{b.classList.toggle("active",i===selectedIndex);b.classList.toggle("running",running&&i===selectedIndex);});
   }
@@ -93,7 +94,7 @@
   $("clockSize").addEventListener("change",()=>{clockSize=$("clockSize").value;applyClockSize();save();});
   $("textColorButtons").innerHTML=textColorChoices.map(c=>`<button type="button" class="theme-swatch text-color-swatch${c.color===buttonTextColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-text-color="${c.color}"></button>`).join("");
   $("textColorButtons").addEventListener("click",e=>{const b=e.target.closest("[data-text-color]");if(!b)return;buttonTextColor=b.dataset.textColor;document.querySelectorAll(".text-color-swatch").forEach(x=>x.classList.toggle("active",x.dataset.textColor===buttonTextColor));render();save();});
-  $("runningColorButtons").innerHTML=textColorChoices.map(c=>`<button type="button" class="theme-swatch running-color-swatch${c.color===runningTimeColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-running-color="${c.color}"></button>`).join("");
+  $("runningColorButtons").innerHTML=runningColorChoices.map(c=>`<button type="button" class="theme-swatch running-color-swatch${c.color===runningTimeColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-running-color="${c.color}"></button>`).join("");
   $("runningColorButtons").addEventListener("click",e=>{const b=e.target.closest("[data-running-color]");if(!b)return;runningTimeColor=b.dataset.runningColor;document.querySelectorAll(".running-color-swatch").forEach(x=>x.classList.toggle("active",x.dataset.runningColor===runningTimeColor));render();save();});
   const sizeInputMap={clockDigit:"clockDigitSize",slotDigit:"slotDigitSize",controlText:"controlTextSize",settingsIcon:"settingsIconSize"};
   Object.entries(sizeInputMap).forEach(([key,id])=>$(id).addEventListener("change",()=>{textSizes[key]=$(id).value;applyTextSizes();save();}));
