@@ -49,6 +49,8 @@
     $("app").dataset.running=running?"true":"false";
     const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
     $("clockFill").style.height = `${fill * 100}%`;document.documentElement.style.setProperty("--fill-ratio",`${fill*100}%`);
+    const shellRect=$("clockShell").getBoundingClientRect(), fillTop=shellRect.bottom-shellRect.height*fill;
+    document.querySelectorAll(".icon-btn,.quick-btn,.main-controls .primary-btn,.main-controls .control-btn").forEach(el=>{const r=el.getBoundingClientRect(),visible=r.height?Math.max(0,Math.min(1,(r.bottom-Math.max(r.top,fillTop))/r.height)):0;el.style.setProperty("--frame-fill",`${visible*100}%`);});
     $("startPauseBtn").textContent=running?"暫停":(finished?"再開始":(remaining>0&&remaining<duration?"繼續":"開始"));
     document.querySelectorAll(".quick-btn").forEach((b,i)=>{b.classList.toggle("active",i===selectedIndex);b.classList.toggle("running",running&&i===selectedIndex);});
   }
@@ -94,6 +96,7 @@
   $("clockSize").addEventListener("change",()=>{clockSize=$("clockSize").value;applyClockSize();save();});
   $("textColorButtons").innerHTML=textColorChoices.map(c=>`<button type="button" class="theme-swatch text-color-swatch${c.color===buttonTextColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-text-color="${c.color}"></button>`).join("");
   $("textColorButtons").addEventListener("click",e=>{const b=e.target.closest("[data-text-color]");if(!b)return;buttonTextColor=b.dataset.textColor;document.querySelectorAll(".text-color-swatch").forEach(x=>x.classList.toggle("active",x.dataset.textColor===buttonTextColor));render();save();});
+  $("resetTimerFieldsBtn").addEventListener("click",()=>{["h","m","s"].forEach(part=>{$("timerFields").querySelector(`[data-part="${part}"]`).value="0";});});
   $("runningColorButtons").innerHTML=runningColorChoices.map(c=>`<button type="button" class="theme-swatch running-color-swatch${c.color===runningTimeColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-running-color="${c.color}"></button>`).join("");
   $("runningColorButtons").addEventListener("click",e=>{const b=e.target.closest("[data-running-color]");if(!b)return;runningTimeColor=b.dataset.runningColor;document.querySelectorAll(".running-color-swatch").forEach(x=>x.classList.toggle("active",x.dataset.runningColor===runningTimeColor));render();save();});
   const sizeInputMap={clockDigit:"clockDigitSize",slotDigit:"slotDigitSize",controlText:"controlTextSize",settingsIcon:"settingsIconSize"};
@@ -107,6 +110,7 @@
   $("themeButtons").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;themeIndex=Number(b.dataset.theme);save();document.querySelectorAll(".theme-swatch").forEach((x,i)=>x.classList.toggle("active",i===themeIndex));render();});
   window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").classList.remove("hidden");});$("installBtn").addEventListener("click",async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").classList.add("hidden");});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&running){remaining=Math.max(0,(endAt-Date.now())/1000);if(remaining<=0)finish();else render();}});
+  window.addEventListener("resize",()=>render());
   document.addEventListener("pointerdown",e=>{if(e.target.closest("button"))stopAlarm();},true);
   document.addEventListener("click",e=>{if(e.target.closest("button"))stopAlarm();},true);
   document.addEventListener("keydown",()=>stopAlarm(),true);
