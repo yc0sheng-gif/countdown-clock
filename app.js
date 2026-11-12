@@ -15,6 +15,10 @@
   let themeIndex = Number.isInteger(stored.themeIndex) && stored.themeIndex >= 0 && stored.themeIndex < 8 ? stored.themeIndex : 0;
   const textColorChoices=[{name:"黑色",color:"#111111"},{name:"白色",color:"#ffffff"},{name:"淺灰",color:"#d9dde3"},{name:"深灰",color:"#4b5563"},{name:"粉紅",color:"#ff6fae"},{name:"亮黃",color:"#ffe45e"},{name:"天空藍",color:"#70d6ff"},{name:"薄荷綠",color:"#7cffb2"}];
   let buttonTextColor=textColorChoices.some(c=>c.color===String(stored.buttonTextColor))?String(stored.buttonTextColor):themes[themeIndex].ink;
+  const sizeOptions=["small","normal","medium","mediumLarge","large"],savedTextSizes=stored.textSizes||{};
+  const readTextSize=k=>sizeOptions.includes(savedTextSizes[k])?savedTextSizes[k]:"normal";
+  let textSizes={clockDigit:readTextSize("clockDigit"),slotDigit:readTextSize("slotDigit"),controlText:readTextSize("controlText"),settingsIcon:readTextSize("settingsIcon")};
+  let runningTimeColor=textColorChoices.some(c=>c.color===String(stored.runningTimeColor))?String(stored.runningTimeColor):"#ff6fae";
   let clockSize = ["0.6","0.7","0.8","0.9","fullscreen"].includes(String(stored.clockSize)) ? String(stored.clockSize) : "0.9";
   let selectedIndex = Number.isInteger(stored.selectedIndex) && stored.selectedIndex >= 0 && stored.selectedIndex < 4 ? stored.selectedIndex : -1;
   let editingSlotIndex = 0;
@@ -34,12 +38,14 @@
     [[1568,.17],[1319,.17],[1568,.17],[1319,.17],[1760,.28],[1568,.38]],
     [[988,.14],[740,.14],[988,.14],[740,.14],[1175,.14],[880,.14],[1175,.32]]
   ];
-  function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,sound,themeIndex,clockSize,buttonTextColor,selectedIndex}));}
+  function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,sound,themeIndex,clockSize,buttonTextColor,runningTimeColor,textSizes,selectedIndex}));}
   function applyClockSize(){$("app").dataset.clockSize=clockSize;}
+  function applyTextSizes(){const app=$("app");app.dataset.clockDigitSize=textSizes.clockDigit;app.dataset.slotDigitSize=textSizes.slotDigit;app.dataset.controlTextSize=textSizes.controlText;app.dataset.settingsIconSize=textSizes.settingsIcon;}
   function fmt(n){n=Math.max(0,Math.ceil(n));const h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
   function setStatus(s){$("statusText").textContent=s;}
   function render(){
-    const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);
+    const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);document.documentElement.style.setProperty("--running-time-ink",runningTimeColor);
+    $("app").dataset.running=running?"true":"false";
     const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
     $("clockFill").style.height = `${fill * 100}%`;
     $("startPauseBtn").textContent=running?"暫停":(finished?"再開始":(remaining>0&&remaining<duration?"繼續":"開始"));
@@ -83,11 +89,15 @@
   function releaseWakeLock(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}}
   function openTimerEditor(i){editingSlotIndex=i;if(running&&selectedIndex===i)pause();const t=timers[i],wrap=$("timerFields");$("timerDialogTitle").textContent=`設定第 ${i+1} 組時間`;wrap.innerHTML="";const row=document.createElement("div");row.className="timer-edit-row";row.innerHTML=`<label class="field">時<input data-part="h" type="number" min="0" max="99" value="${Math.floor(t.seconds/3600)}"></label><label class="field">分<input data-part="m" type="number" min="0" max="59" value="${Math.floor(t.seconds%3600/60)}"></label><label class="field">秒<input data-part="s" type="number" min="0" max="59" value="${t.seconds%60}"></label>`;wrap.appendChild(row);$("timerDialog").showModal();}
   $("startPauseBtn").addEventListener("click",()=>running?pause():start());$("restartBtn").addEventListener("click",restart);$("stopBtn").addEventListener("click",stop);
-  $("settingsBtn").addEventListener("click",()=>{$("tickEnabled").checked=sound.tickEnabled;$("tickVolume").value=sound.tickVolume;$("tickVolumeText").textContent=sound.tickVolume+"%";$("alarmType").value=sound.alarmType;$("alarmVolume").value=sound.alarmVolume;$("alarmVolumeText").textContent=sound.alarmVolume+"%";$("alarmMode").value=sound.alarmMode;$("clockSize").value=clockSize;$("settingsDialog").showModal();});
+  $("settingsBtn").addEventListener("click",()=>{$("tickEnabled").checked=sound.tickEnabled;$("tickVolume").value=sound.tickVolume;$("tickVolumeText").textContent=sound.tickVolume+"%";$("alarmType").value=sound.alarmType;$("alarmVolume").value=sound.alarmVolume;$("alarmVolumeText").textContent=sound.alarmVolume+"%";$("alarmMode").value=sound.alarmMode;$("clockSize").value=clockSize;$("clockDigitSize").value=textSizes.clockDigit;$("slotDigitSize").value=textSizes.slotDigit;$("controlTextSize").value=textSizes.controlText;$("settingsIconSize").value=textSizes.settingsIcon;$("settingsDialog").showModal();});
   $("clockSize").addEventListener("change",()=>{clockSize=$("clockSize").value;applyClockSize();save();});
   $("textColorButtons").innerHTML=textColorChoices.map(c=>`<button type="button" class="theme-swatch text-color-swatch${c.color===buttonTextColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-text-color="${c.color}"></button>`).join("");
   $("textColorButtons").addEventListener("click",e=>{const b=e.target.closest("[data-text-color]");if(!b)return;buttonTextColor=b.dataset.textColor;document.querySelectorAll(".text-color-swatch").forEach(x=>x.classList.toggle("active",x.dataset.textColor===buttonTextColor));render();save();});
-  $("settingsForm").addEventListener("submit",()=>{sound={tickEnabled:$("tickEnabled").checked,tickVolume:Number($("tickVolume").value),alarmType:$("alarmType").value,alarmVolume:Number($("alarmVolume").value),alarmMode:$("alarmMode").value};clockSize=$("clockSize").value;applyClockSize();render();save();if(running){stopTicker();scheduleTick();}});
+  $("runningColorButtons").innerHTML=textColorChoices.map(c=>`<button type="button" class="theme-swatch running-color-swatch${c.color===runningTimeColor?" active":""}" style="--swatch:${c.color}" title="${c.name}" aria-label="${c.name}" data-running-color="${c.color}"></button>`).join("");
+  $("runningColorButtons").addEventListener("click",e=>{const b=e.target.closest("[data-running-color]");if(!b)return;runningTimeColor=b.dataset.runningColor;document.querySelectorAll(".running-color-swatch").forEach(x=>x.classList.toggle("active",x.dataset.runningColor===runningTimeColor));render();save();});
+  const sizeInputMap={clockDigit:"clockDigitSize",slotDigit:"slotDigitSize",controlText:"controlTextSize",settingsIcon:"settingsIconSize"};
+  Object.entries(sizeInputMap).forEach(([key,id])=>$(id).addEventListener("change",()=>{textSizes[key]=$(id).value;applyTextSizes();save();}));
+  $("settingsForm").addEventListener("submit",()=>{sound={tickEnabled:$("tickEnabled").checked,tickVolume:Number($("tickVolume").value),alarmType:$("alarmType").value,alarmVolume:Number($("alarmVolume").value),alarmMode:$("alarmMode").value};clockSize=$("clockSize").value;Object.entries(sizeInputMap).forEach(([key,id])=>textSizes[key]=$(id).value);applyClockSize();applyTextSizes();render();save();if(running){stopTicker();scheduleTick();}});
   $("alarmType").innerHTML=alarmNames.map((n,i)=>`<option value="${n}">${String(i+1).padStart(2,"0")} · ${n}</option>`).join("");if(!alarmNames.includes(sound.alarmType))sound.alarmType=alarmNames[0];
   $("tickVolume").addEventListener("input",e=>$("tickVolumeText").textContent=e.target.value+"%");$("alarmVolume").addEventListener("input",e=>$("alarmVolumeText").textContent=e.target.value+"%");
   $("testAlarmBtn").addEventListener("click",()=>{sound.alarmType=$("alarmType").value;sound.alarmVolume=Number($("alarmVolume").value);playAlarmOnce();});
@@ -100,5 +110,5 @@
   document.addEventListener("click",e=>{if(e.target.closest("button"))stopAlarm();},true);
   document.addEventListener("keydown",()=>stopAlarm(),true);
   if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
-  applyClockSize();renderSlots();render();
+  applyClockSize();applyTextSizes();renderSlots();render();
 })();

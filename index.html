@@ -41,6 +41,12 @@
   <dialog id="settingsDialog" class="dialog">
     <form method="dialog" class="dialog-card" id="settingsForm">
       <div class="dialog-heading"><h2>設定</h2><button class="close-btn" value="cancel" aria-label="關閉">×</button></div>
+      <h3>文字與符號大小</h3>
+      <label class="field">大時鐘數字<select id="clockDigitSize"><option value="small">小</option><option value="normal">標準</option><option value="medium">稍大</option><option value="mediumLarge">更大</option><option value="large">大</option></select></label>
+      <label class="field">四組小時間數字<select id="slotDigitSize"><option value="small">小</option><option value="normal">標準</option><option value="medium">稍大</option><option value="mediumLarge">更大</option><option value="large">大</option></select></label>
+      <label class="field">三個操作鍵<select id="controlTextSize"><option value="small">小</option><option value="normal">標準</option><option value="medium">稍大</option><option value="mediumLarge">更大</option><option value="large">大</option></select></label>
+      <label class="field">設定鍵符號<select id="settingsIconSize"><option value="small">小</option><option value="normal">標準</option><option value="medium">稍大</option><option value="mediumLarge">更大</option><option value="large">大</option></select></label>
+      <hr>
       <h3>滴答聲</h3>
       <label class="switch-line"><span>每秒滴答聲</span><input id="tickEnabled" type="checkbox" checked></label>
       <label class="range-line"><span>滴答聲音量 <b id="tickVolumeText">70%</b></span><input id="tickVolume" type="range" min="0" max="100" value="70"></label>
@@ -59,6 +65,7 @@
       <p class="hint">倒數時，亮色填充會隨剩餘時間逐漸縮小。</p>
       <div id="themeButtons" class="theme-buttons" aria-label="時鐘底色"></div>
       <div class="field color-choice-field"><span>按鍵文字與符號顏色</span><div id="textColorButtons" class="theme-buttons" aria-label="按鍵文字與符號顏色"></div></div>
+      <div class="field color-choice-field"><span>倒數中時間數字顏色</span><div id="runningColorButtons" class="theme-buttons" aria-label="倒數中時間數字顏色"></div></div>
       <div class="dialog-actions"><button value="cancel" class="primary-btn">完成</button></div>
     </form>
   </dialog>

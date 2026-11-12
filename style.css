@@ -108,3 +108,38 @@ body{font-size:18.72px}
  .quick-btn{font-size:clamp(15.1164px,4.09032vw,18.6732px)}
  .main-controls .primary-btn,.main-controls .control-btn{min-height:49px;padding:4px 18px;line-height:1}
 }
+.icon-btn{background:var(--clock-theme-bg);color:var(--clock-theme-ink);border:2px solid #fff}
+.main-controls .primary-btn,.main-controls .control-btn{min-height:50.75px;padding:2px 24px;line-height:1}
+.app[data-clock-digit-size="small"] .timer-display{font-size:clamp(84.864px,19.448vw,212.16px)}
+.app[data-clock-digit-size="medium"] .timer-display{font-size:clamp(104.832px,24.024vw,262.08px)}
+.app[data-clock-digit-size="mediumLarge"] .timer-display{font-size:clamp(109.824px,25.168vw,274.56px)}
+.app[data-clock-digit-size="large"] .timer-display{font-size:clamp(114.816px,26.312vw,287.04px)}
+.app[data-slot-digit-size="small"] .quick-btn{font-size:clamp(13.6048px,1.81497vw,17.3839px)}
+.app[data-slot-digit-size="medium"] .quick-btn{font-size:clamp(16.8059px,2.24078vw,21.4742px)}
+.app[data-slot-digit-size="mediumLarge"] .quick-btn{font-size:clamp(17.6062px,2.34749vw,22.4968px)}
+.app[data-slot-digit-size="large"] .quick-btn{font-size:clamp(18.4064px,2.45419vw,23.5193px)}
+.app[data-control-text-size="small"] .main-controls .primary-btn{font-size:16.796px}
+.app[data-control-text-size="medium"] .main-controls .primary-btn{font-size:20.748px}
+.app[data-control-text-size="mediumLarge"] .main-controls .primary-btn{font-size:21.736px}
+.app[data-control-text-size="large"] .main-controls .primary-btn{font-size:22.724px}
+.app[data-control-text-size="small"] .main-controls .control-btn{font-size:26.52px}
+.app[data-control-text-size="medium"] .main-controls .control-btn{font-size:32.76px}
+.app[data-control-text-size="mediumLarge"] .main-controls .control-btn{font-size:34.32px}
+.app[data-control-text-size="large"] .main-controls .control-btn{font-size:35.88px}
+.app[data-settings-icon-size="small"] .icon-btn{font-size:24.752px}
+.app[data-settings-icon-size="medium"] .icon-btn{font-size:30.576px}
+.app[data-settings-icon-size="mediumLarge"] .icon-btn{font-size:32.032px}
+.app[data-settings-icon-size="large"] .icon-btn{font-size:33.488px}
+.app[data-running="true"] .timer-display{color:var(--running-time-ink)}
+.quick-btn.running{color:var(--running-time-ink)}
+@media(max-width:600px){
+ .main-controls .primary-btn,.main-controls .control-btn{min-height:61.25px;padding:4px 18px}
+ .app[data-clock-digit-size="small"] .timer-display{font-size:clamp(68.952px,16.796vw,120.224px)}
+.app[data-clock-digit-size="medium"] .timer-display{font-size:clamp(85.176px,20.748vw,148.512px)}
+.app[data-clock-digit-size="mediumLarge"] .timer-display{font-size:clamp(89.232px,21.736vw,155.584px)}
+ .app[data-clock-digit-size="large"] .timer-display{font-size:clamp(93.288px,22.724vw,162.656px)}
+ .app[data-slot-digit-size="small"] .quick-btn{font-size:clamp(12.849px,3.47677vw,15.8722px)}
+.app[data-slot-digit-size="medium"] .quick-btn{font-size:clamp(15.8722px,4.29484vw,19.6069px)}
+.app[data-slot-digit-size="mediumLarge"] .quick-btn{font-size:clamp(16.628px,4.49935vw,20.5405px)}
+ .app[data-slot-digit-size="large"] .quick-btn{font-size:clamp(17.38px,4.704vw,21.4742px)}
+}
