@@ -121,6 +121,10 @@
   document.addEventListener("pointerdown",e=>{if(e.target.closest("button"))stopAlarm();},true);
   document.addEventListener("click",e=>{if(e.target.closest("button"))stopAlarm();},true);
   document.addEventListener("keydown",()=>stopAlarm(),true);
+  ["gesturestart","gesturechange"].forEach(type=>document.addEventListener(type,e=>e.preventDefault(),{passive:false}));
+  document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
+  document.addEventListener("wheel",e=>{if(e.ctrlKey||e.metaKey)e.preventDefault();},{passive:false});
+  document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["+","=","-","0"].includes(e.key))e.preventDefault();},true);
   if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost"))window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
   applyClockSize();applyTextSizes();renderSlots();render();
 })();
