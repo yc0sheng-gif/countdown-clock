@@ -160,6 +160,7 @@ body{font-size:18.72px}
 .app[data-settings-icon-size="mediumLarge"] .icon-btn{font-size:38.7296px}
 .app[data-settings-icon-size="large"] .icon-btn{font-size:43.5224px}
 .icon-btn,.quick-btn,.main-controls .primary-btn,.main-controls .control-btn{background:linear-gradient(to top,var(--clock-theme-bg) 0%,var(--clock-theme-bg) var(--frame-fill,100%),#151c29 var(--frame-fill,100%),#151c29 100%)}
+.dialog-actions #saveSettingsBtn{width:176px;min-width:176px}
 @media(max-width:600px){
  .app[data-clock-digit-size="medium"] .timer-display{font-size:clamp(94.5048px,23.0204vw,164.7776px)}
  .app[data-clock-digit-size="mediumLarge"] .timer-display{font-size:clamp(107.8896px,26.2808vw,188.1152px)}
