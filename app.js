@@ -70,7 +70,7 @@
   function renderMultiClocks(active){
     const host=$("multiClocks"),key=active.join(",");
     if(host.dataset.indices!==key){host.dataset.indices=key;host.innerHTML=active.map(i=>`<button type="button" class="timer-lane" data-index="${i}" aria-label="第 ${i+1} 組倒數時間"><span class="lane-track"><span class="lane-fill"></span></span><span class="lane-time"></span></button>`).join("");host.querySelectorAll(".timer-lane").forEach(lane=>lane.addEventListener("click",()=>{selectedIndex=Number(lane.dataset.index);stopTicker();scheduleTick();save();render();}));}
-    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i],ratio=s.duration?Math.max(0,Math.min(1,s.remaining/s.duration)):0;lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.width=`${ratio*100}%`;lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
+    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i],ratio=s.duration?Math.max(0,Math.min(1,s.remaining/s.duration)):0;lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.height=`${ratio*100}%`;lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
   }
   function renderSlots(){
     const wrap=$("quickButtons");wrap.innerHTML="";
