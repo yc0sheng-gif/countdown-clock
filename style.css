@@ -22,7 +22,7 @@
 .lane-track{position:absolute;inset:0;z-index:-1;background:#151c29}
 .lane-fill{position:absolute;inset:auto 0 0;width:100%;height:100%;background:color-mix(in srgb,var(--clock-theme-bg) var(--lane-opacity,100%),transparent);transition:height .12s linear}
 .lane-time{font-size:clamp(var(--lane-size-min,13px),var(--lane-size-fluid,3.4vw),var(--lane-size-max,32px));font-weight:800;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 2px 8px #0008;white-space:nowrap}
-.timer-lane.selected{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 78%,transparent);filter:brightness(1.12)}
+.timer-lane.selected{filter:brightness(1.12)}
 .timer-lane:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media(max-width:600px){.multi-clocks{gap:6px}.timer-lane{border-radius:16px;padding:2px 1px}}
 .app[data-lane-digit-size="small"]{--lane-size-min:10px;--lane-size-fluid:2.7vw;--lane-size-max:25px}
@@ -30,9 +30,10 @@
 .app[data-lane-digit-size="medium"]{--lane-size-min:15px;--lane-size-fluid:4vw;--lane-size-max:37px}
 .app[data-lane-digit-size="mediumLarge"]{--lane-size-min:17px;--lane-size-fluid:4.5vw;--lane-size-max:42px}
 .app[data-lane-digit-size="large"]{--lane-size-min:19px;--lane-size-fluid:5vw;--lane-size-max:47px}
-.quick-btn.active,.timer-lane.selected{position:relative;z-index:2;outline:4px solid #ff233e;outline-offset:1px;animation:selected-group-flash .8s steps(2,end) infinite}
-@keyframes selected-group-flash{0%,100%{outline-color:#ff1738;box-shadow:0 0 0 1px #ff1738,0 0 14px #ff1738}50%{outline-color:#ff7b32;box-shadow:0 0 0 2px #ff7b32,0 0 22px #ff1738}}
-@media(prefers-reduced-motion:reduce){.quick-btn.active,.timer-lane.selected{animation:none;outline-color:#ff233e;box-shadow:0 0 0 2px #ff233e}}
+.quick-btn.active{border-color:var(--selection-border-color,#ff233e)}
+.quick-btn.active,.timer-lane.selected{position:relative;z-index:2;outline:2px solid var(--selection-border-color,#ff233e);outline-offset:1px;animation:selected-group-flash .8s steps(2,end) infinite}
+@keyframes selected-group-flash{0%,100%{outline-color:var(--selection-border-color,#ff233e)}50%{outline-color:color-mix(in srgb,var(--selection-border-color,#ff233e) 35%,transparent)}}
+@media(prefers-reduced-motion:reduce){.quick-btn.active,.timer-lane.selected{animation:none;outline-color:var(--selection-border-color,#ff233e);box-shadow:none}}
 /* Larger, easier-to-read type and touch targets throughout the clock. */
 body{font-size:18px}
 .brand{font-size:clamp(19px,2.5vw,24px)}
@@ -69,7 +70,7 @@ body{font-size:23.4px}
 .timer-display.wide-time{transform:scaleX(.68)}
 .status-text{font-size:clamp(23.4px,3.25vw,29.9px)}
 .quick-btn{min-height:56px;font-size:clamp(21.06px,2.808vw,26.91px);background:var(--clock-theme-bg);color:var(--clock-theme-ink);border:2px solid #fff;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.quick-btn.active{border-color:#fff;box-shadow:inset 0 0 0 1px #fff,0 2px 8px #0003}
+.quick-btn.active{border-color:var(--selection-border-color,#ff233e);box-shadow:0 2px 8px #0003}
 .quick-btn.running{color:#ff4fa3}
 .quick-btn .slot-time{display:inline-block;white-space:nowrap}
 .quick-btn.long-time .slot-time{transform:scaleX(.68)}
