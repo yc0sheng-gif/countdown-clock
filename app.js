@@ -63,6 +63,7 @@
     const shellRect=$("clockShell").getBoundingClientRect(), fillTop=shellRect.bottom-shellRect.height*fill;
     document.querySelectorAll(".icon-btn,.quick-btn,.main-controls .primary-btn,.main-controls .control-btn").forEach(el=>{const r=el.getBoundingClientRect(),visible=r.height?Math.max(0,Math.min(1,(r.bottom-Math.max(r.top,fillTop))/r.height)):0;el.style.setProperty("--frame-fill",`${visible*100}%`);});
     const startLabel=state?.running?"暫停":(state?.finished?"再開始":(state?.started&&remaining>0?"繼續":"開始"));$("startPauseBtn").textContent=startLabel.length===2?`${startLabel[0]} ${startLabel[1]}`:startLabel;
+    document.querySelectorAll(".main-controls button").forEach(button=>button.classList.toggle("operating-selected",selectedIndex>=0&&!!timers[selectedIndex]?.seconds));
     document.querySelectorAll(".quick-btn").forEach((b,i)=>{const s=timerStates[i],label=b.querySelector(".slot-time");b.classList.toggle("active",i===selectedIndex);b.classList.toggle("running",s.running);if(label){label.textContent=!timers[i].seconds?"--:--":s.started?fmt(s.remaining):fmt(timers[i].seconds);b.classList.toggle("long-time",label.textContent.length>5);}});
     $("timerDisplay").classList.toggle("hidden",active.length>1);$("multiClocks").classList.toggle("hidden",active.length<2);if(active.length>1)setStatus(`同時倒數 ${active.length} 組 · 操作第 ${selectedIndex+1} 組`);else if(active.length===1&&active[0]!==selectedIndex)setStatus(`第 ${active[0]+1} 組倒數中 · 操作第 ${selectedIndex+1} 組`);
     if(active.length>1)renderMultiClocks(active);
@@ -70,7 +71,7 @@
   function renderMultiClocks(active){
     const host=$("multiClocks"),key=active.join(",");
     if(host.dataset.indices!==key){host.dataset.indices=key;host.innerHTML=active.map(i=>`<button type="button" class="timer-lane" data-index="${i}" aria-label="第 ${i+1} 組倒數時間"><span class="lane-track"><span class="lane-fill"></span></span><span class="lane-time"></span></button>`).join("");host.querySelectorAll(".timer-lane").forEach(lane=>lane.addEventListener("click",()=>{selectedIndex=Number(lane.dataset.index);stopTicker();scheduleTick();save();render();}));}
-    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i];lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.height="0%";lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
+    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i],ratio=s.duration?Math.max(0,Math.min(1,s.remaining/s.duration)):0;lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.height=`${ratio*100}%`;lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
   }
   function renderSlots(){
     const wrap=$("quickButtons");wrap.innerHTML="";
