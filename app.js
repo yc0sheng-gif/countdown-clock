@@ -58,7 +58,7 @@
     const active=activeTimerIndexes();if(selectedIndex<0&&active.length)selectedIndex=active[0];const state=selectedState(),displayState=active.length===1&&!state?.running?timerStates[active[0]]:state,duration=displayState?.duration||0,remaining=displayState?.remaining||0;
     const timeText=duration?fmt(remaining):"--:--",display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);document.documentElement.style.setProperty("--running-time-ink",runningTimeColor);
     $("app").dataset.running=displayState?.running?"true":"false";
-    const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
+    const fill = active.length===1&&duration>0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
     $("clockFill").style.height = `${fill * 100}%`;document.documentElement.style.setProperty("--fill-ratio",`${fill*100}%`);
     const shellRect=$("clockShell").getBoundingClientRect(), fillTop=shellRect.bottom-shellRect.height*fill;
     document.querySelectorAll(".icon-btn,.quick-btn,.main-controls .primary-btn,.main-controls .control-btn").forEach(el=>{const r=el.getBoundingClientRect(),visible=r.height?Math.max(0,Math.min(1,(r.bottom-Math.max(r.top,fillTop))/r.height)):0;el.style.setProperty("--frame-fill",`${visible*100}%`);});
@@ -70,7 +70,7 @@
   function renderMultiClocks(active){
     const host=$("multiClocks"),key=active.join(",");
     if(host.dataset.indices!==key){host.dataset.indices=key;host.innerHTML=active.map(i=>`<button type="button" class="timer-lane" data-index="${i}" aria-label="第 ${i+1} 組倒數時間"><span class="lane-track"><span class="lane-fill"></span></span><span class="lane-time"></span></button>`).join("");host.querySelectorAll(".timer-lane").forEach(lane=>lane.addEventListener("click",()=>{selectedIndex=Number(lane.dataset.index);stopTicker();scheduleTick();save();render();}));}
-    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i],ratio=s.duration?Math.max(0,Math.min(1,s.remaining/s.duration)):0;lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.height=`${ratio*100}%`;lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
+    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i];lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.height="0%";lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
   }
   function renderSlots(){
     const wrap=$("quickButtons");wrap.innerHTML="";
@@ -107,7 +107,7 @@
   function pause(){if(selectedIndex>=0)pauseTimer(selectedIndex);}
   function pauseTimer(i){const s=timerStates[i];if(!s?.running)return;s.remaining=Math.max(0,(s.endAt-Date.now())/1000);s.running=false;s.endAt=0;s.started=true;selectedIndex=i;setStatus(`第 ${i+1} 組已暫停`);syncRuntime();save();render();}
   function loop(){rafId=null;let finishedAny=false;timerStates.forEach(s=>{if(!s.running)return;s.remaining=Math.max(0,(s.endAt-Date.now())/1000);if(s.remaining<=0){s.remaining=0;s.running=false;s.finished=true;s.started=true;s.endAt=0;finishedAny=true;}});if(finishedAny){setStatus("時間到！");playAlarm();}render();if(hasRunningTimers())rafId=requestAnimationFrame(loop);else{stopTicker();releaseWakeLock();}}
-  function restart(){const s=selectedState(),i=selectedIndex;if(!s||i<0||!timers[i]?.seconds){setStatus("請先編輯並選擇時間");return;}s.running=false;s.finished=false;s.started=true;s.duration=timers[i].seconds;s.remaining=s.duration;s.endAt=0;syncRuntime();save();setStatus(`第 ${i+1} 組已重新準備`);render();}
+  function restart(){const s=selectedState(),i=selectedIndex;if(!s||i<0||!timers[i]?.seconds){setStatus("請先編輯並選擇時間");return;}s.running=false;s.finished=false;s.started=false;s.duration=timers[i].seconds;s.remaining=s.duration;s.endAt=0;syncRuntime();save();setStatus(`第 ${i+1} 組已重新準備`);render();}
   function stop(){const s=selectedState(),i=selectedIndex;if(!s||i<0){setStatus("請先選擇時間");return;}s.running=false;s.finished=false;s.started=false;s.duration=timers[i].seconds;s.remaining=s.duration;s.endAt=0;syncRuntime();save();setStatus(`第 ${i+1} 組已結束`);render();}
   async function acquireWakeLock(){try{if(!wakeLock&&"wakeLock" in navigator)wakeLock=await navigator.wakeLock.request("screen");}catch(_){}}
   function releaseWakeLock(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}}
