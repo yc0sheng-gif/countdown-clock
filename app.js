@@ -23,8 +23,9 @@
   let clockSize = ["0.6","0.7","0.8","0.9","fullscreen"].includes(String(stored.clockSize)) ? String(stored.clockSize) : "0.9";
   let selectedIndex = Number.isInteger(stored.selectedIndex) && stored.selectedIndex >= 0 && stored.selectedIndex < 4 ? stored.selectedIndex : -1;
   let editingSlotIndex = 0;
-  let duration = selectedIndex >= 0 ? timers[selectedIndex].seconds : 0, remaining = duration;
-  let running=false, finished=false, endAt=0, rafId=null, tickTimer=null, lastTickAt=0, audioCtx=null, alarmBus=null, alarmLimiter=null, alarmTimeouts=[], wakeLock=null, deferredInstall=null;
+  const savedTimerStates=Array.isArray(stored.timerStates)?stored.timerStates:[];
+  const timerStates=timers.map((t,i)=>{const s=savedTimerStates[i]||{},endAt=Number(s.endAt)||0,wasRunning=!!s.running&&endAt>Date.now()&&t.seconds>0,duration=t.seconds,remaining=wasRunning?Math.min(duration,(endAt-Date.now())/1000):s.started?Math.min(duration,Math.max(0,Number(s.remaining)||0)):duration;return {duration,remaining,running:false,finished:!wasRunning&&!!s.finished,started:wasRunning||!!s.started,endAt:0};});
+  let rafId=null,tickTimer=null,lastTickAt=0,audioCtx=null,alarmBus=null,alarmLimiter=null,alarmTimeouts=[],wakeLock=null,deferredInstall=null;
   let settingsSnapshot=null;
   const alarmPatterns = [
     [[1047,.16],[1319,.22],[1568,.42]], [[523,.28],[659,.3],[784,.35],[1047,.7]], [[880,.22],[660,.22],[880,.5]], [[523,.18],[659,.18],[784,.18],[1047,.45]],
@@ -41,29 +42,40 @@
     [[988,.14],[740,.14],[988,.14],[740,.14],[1175,.14],[880,.14],[1175,.32]]
   ];
   const gentleAlarmIndexes=new Set([1,5,6,7,8,9,14,15,16,17,18]);
-  function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,sound,themeIndex,clockSize,buttonTextColor,runningTimeColor,textSizes,selectedIndex}));}
+  function save(){localStorage.setItem("countdownClockV2",JSON.stringify({timers,timerStates,sound,themeIndex,clockSize,buttonTextColor,runningTimeColor,textSizes,selectedIndex}));}
+  function activeTimerIndexes(){return timerStates.map((s,i)=>s.running?i:-1).filter(i=>i>=0);}
+  function hasRunningTimers(){return timerStates.some(s=>s.running);}
+  function selectedState(){return selectedIndex>=0?timerStates[selectedIndex]:null;}
   function applyClockSize(){$("app").dataset.clockSize=clockSize;}
   function applyTextSizes(){const app=$("app");app.dataset.clockDigitSize=textSizes.clockDigit;app.dataset.slotDigitSize=textSizes.slotDigit;app.dataset.controlTextSize=textSizes.controlText;app.dataset.settingsIconSize=textSizes.settingsIcon;}
   function settingsDraft(){return {sound:{tickEnabled:$("tickEnabled").checked,tickVolume:Number($("tickVolume").value),alarmType:$("alarmType").value,alarmVolume:Number($("alarmVolume").value),alarmMode:$("alarmMode").value},themeIndex,buttonTextColor,runningTimeColor,clockSize,textSizes:{...textSizes}};}
-  function commitSettings(){const draft=settingsDraft();sound=draft.sound;clockSize=draft.clockSize;textSizes=draft.textSizes;applyClockSize();applyTextSizes();render();save();if(running){stopTicker();scheduleTick();}}
+  function commitSettings(){const draft=settingsDraft();sound=draft.sound;clockSize=draft.clockSize;textSizes=draft.textSizes;applyClockSize();applyTextSizes();render();save();if(hasRunningTimers()){stopTicker();scheduleTick();}}
   function restoreSettings(snapshot){if(!snapshot)return;const old=JSON.parse(snapshot);sound=old.sound;themeIndex=old.themeIndex;buttonTextColor=old.buttonTextColor;runningTimeColor=old.runningTimeColor;clockSize=old.clockSize;textSizes=old.textSizes;applyClockSize();applyTextSizes();document.querySelectorAll(".theme-swatch").forEach((x,i)=>{if(x.dataset.theme!==undefined)x.classList.toggle("active",i===themeIndex);if(x.dataset.textColor!==undefined)x.classList.toggle("active",x.dataset.textColor===buttonTextColor);if(x.dataset.runningColor!==undefined)x.classList.toggle("active",x.dataset.runningColor===runningTimeColor);});render();}
   function leaveSettings(){const changed=settingsSnapshot!==null&&JSON.stringify(settingsDraft())!==settingsSnapshot;if(changed){if(window.confirm("設定已變更，要儲存後離開嗎？"))commitSettings();else restoreSettings(settingsSnapshot);}settingsSnapshot=null;$("settingsDialog").close();}
   function fmt(n){n=Math.max(0,Math.ceil(n));const h=Math.floor(n/3600),m=Math.floor(n%3600/60),s=n%60;return h?`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
   function setStatus(s){$("statusText").textContent=s;}
   function render(){
-    const timeText=fmt(remaining), display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);document.documentElement.style.setProperty("--running-time-ink",runningTimeColor);
-    $("app").dataset.running=running?"true":"false";
+    const active=activeTimerIndexes();if(selectedIndex<0&&active.length)selectedIndex=active[0];const state=selectedState(),displayState=active.length===1&&!state?.running?timerStates[active[0]]:state,duration=displayState?.duration||0,remaining=displayState?.remaining||0;
+    const timeText=duration?fmt(remaining):"--:--",display=$("timerDisplay");display.textContent=timeText;display.classList.toggle("wide-time",timeText.length>5);document.documentElement.style.setProperty("--accent",themes[themeIndex].accent);document.documentElement.style.setProperty("--clock-theme-bg",themes[themeIndex].bg);document.documentElement.style.setProperty("--clock-theme-ink",buttonTextColor);document.documentElement.style.setProperty("--running-time-ink",runningTimeColor);
+    $("app").dataset.running=displayState?.running?"true":"false";
     const fill = duration > 0 ? Math.max(0, Math.min(1, remaining / duration)) : 0;
     $("clockFill").style.height = `${fill * 100}%`;document.documentElement.style.setProperty("--fill-ratio",`${fill*100}%`);
     const shellRect=$("clockShell").getBoundingClientRect(), fillTop=shellRect.bottom-shellRect.height*fill;
     document.querySelectorAll(".icon-btn,.quick-btn,.main-controls .primary-btn,.main-controls .control-btn").forEach(el=>{const r=el.getBoundingClientRect(),visible=r.height?Math.max(0,Math.min(1,(r.bottom-Math.max(r.top,fillTop))/r.height)):0;el.style.setProperty("--frame-fill",`${visible*100}%`);});
-    const startLabel=running?"暫停":(finished?"再開始":(remaining>0&&remaining<duration?"繼續":"開始"));$("startPauseBtn").textContent=startLabel.length===2?`${startLabel[0]} ${startLabel[1]}`:startLabel;
-    document.querySelectorAll(".quick-btn").forEach((b,i)=>{b.classList.toggle("active",i===selectedIndex);b.classList.toggle("running",running&&i===selectedIndex);});
+    const startLabel=state?.running?"暫停":(state?.finished?"再開始":(state?.started&&remaining>0?"繼續":"開始"));$("startPauseBtn").textContent=startLabel.length===2?`${startLabel[0]} ${startLabel[1]}`:startLabel;
+    document.querySelectorAll(".quick-btn").forEach((b,i)=>{const s=timerStates[i],label=b.querySelector(".slot-time");b.classList.toggle("active",i===selectedIndex);b.classList.toggle("running",s.running);if(label){label.textContent=!timers[i].seconds?"--:--":s.started?fmt(s.remaining):fmt(timers[i].seconds);b.classList.toggle("long-time",label.textContent.length>5);}});
+    $("timerDisplay").classList.toggle("hidden",active.length>1);$("multiClocks").classList.toggle("hidden",active.length<2);if(active.length>1)setStatus(`同時倒數 ${active.length} 組 · 操作第 ${selectedIndex+1} 組`);else if(active.length===1&&active[0]!==selectedIndex)setStatus(`第 ${active[0]+1} 組倒數中 · 操作第 ${selectedIndex+1} 組`);
+    if(active.length>1)renderMultiClocks(active);
+  }
+  function renderMultiClocks(active){
+    const host=$("multiClocks"),key=active.join(",");
+    if(host.dataset.indices!==key){host.dataset.indices=key;host.innerHTML=active.map(i=>`<button type="button" class="timer-lane" data-index="${i}" aria-label="第 ${i+1} 組倒數時間"><span class="lane-track"><span class="lane-fill"></span></span><span class="lane-time"></span></button>`).join("");host.querySelectorAll(".timer-lane").forEach(lane=>lane.addEventListener("click",()=>{selectedIndex=Number(lane.dataset.index);stopTicker();scheduleTick();save();render();}));}
+    host.querySelectorAll(".timer-lane").forEach(lane=>{const i=Number(lane.dataset.index),s=timerStates[i],ratio=s.duration?Math.max(0,Math.min(1,s.remaining/s.duration)):0;lane.classList.toggle("selected",i===selectedIndex);lane.style.setProperty("--lane-opacity",`${[100,85,70,55][i]}%`);lane.querySelector(".lane-fill").style.width=`${ratio*100}%`;lane.querySelector(".lane-time").textContent=fmt(s.remaining);});
   }
   function renderSlots(){
     const wrap=$("quickButtons");wrap.innerHTML="";
     timers.forEach((t,i)=>{
-      const b=document.createElement("button");b.className="quick-btn";b.dataset.index=i;const label=document.createElement("span");label.className="slot-time";label.textContent=t.seconds?fmt(t.seconds):"--:--";b.classList.toggle("long-time",label.textContent.length>5);b.appendChild(label);b.setAttribute("aria-label",`第 ${i+1} 組：${t.seconds?fmt(t.seconds):"未設定，長按兩秒編輯"}`);
+      const b=document.createElement("button");b.className="quick-btn";b.dataset.index=i;const label=document.createElement("span");label.className="slot-time";label.textContent=t.seconds?fmt(t.seconds):"--:--";b.classList.toggle("long-time",label.textContent.length>5);b.appendChild(label);b.setAttribute("aria-label",`第 ${i+1} 組：${t.seconds?fmt(t.seconds):"未設定，長按一秒編輯"}`);
       let holdTimer=null, keyboardHoldTimer=null, didLongPress=false;
       const beginHold=()=>{didLongPress=false;clearTimeout(holdTimer);holdTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},1000);};
       const clearHold=()=>{clearTimeout(holdTimer);clearTimeout(keyboardHoldTimer);};
@@ -72,32 +84,35 @@
       b.addEventListener("keydown",e=>{if(e.code==="Space"&&!e.repeat){e.preventDefault();didLongPress=false;keyboardHoldTimer=setTimeout(()=>{didLongPress=true;openTimerEditor(i);setTimeout(()=>{didLongPress=false;},1000);},1000);}});
       b.addEventListener("keyup",e=>{if(e.code==="Space")clearHold();});
       b.addEventListener("contextmenu",e=>e.preventDefault());
-      b.addEventListener("click",()=>{if(didLongPress){didLongPress=false;return;}if(!t.seconds){setStatus("長按這組時間兩秒即可編輯");return;}selectSlot(i,true);});
+      b.addEventListener("click",()=>{if(didLongPress){didLongPress=false;return;}if(!t.seconds){setStatus("長按這組時間一秒即可編輯");return;}selectSlot(i);});
       wrap.appendChild(b);
     });render();
   }
-  function selectSlot(i,autoStart){const t=timers[i];if(!t||!t.seconds)return;stopTicker();running=false;finished=false;selectedIndex=i;duration=t.seconds;remaining=duration;save();setStatus("準備就緒");render();if(autoStart)start();}
+  function selectSlot(i){const t=timers[i],s=timerStates[i];if(!t||!t.seconds)return;selectedIndex=i;if(s.running){stopTicker();scheduleTick();}save();render();}
   function getAudio(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;audioCtx=new AC();}if(audioCtx.state==="suspended")audioCtx.resume();return audioCtx;}
   function tone(freq,start,length,volume,wave="sine",endFreq=null,bus=null){const ctx=getAudio();if(!ctx||volume<=0||freq<=0)return;const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=wave;osc.frequency.setValueAtTime(freq,start);if(endFreq)osc.frequency.exponentialRampToValueAtTime(Math.max(1,endFreq),start+length);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),start+Math.min(.012,length/4));gain.gain.exponentialRampToValueAtTime(.0001,start+length);osc.connect(gain);gain.connect(bus||ctx.destination);osc.start(start);osc.stop(start+length+.02);}
   function tickSound(){if(!sound.tickEnabled||sound.tickVolume<=0)return;const ctx=getAudio();if(!ctx)return; // Raised, band-limited tick with a soft peak ceiling to keep max setting clear without clipping.
     const v=.408*Math.sqrt(sound.tickVolume/100);tone(1250,ctx.currentTime,.045,v,"triangle",920);}
-  function tickInterval(){const r=duration?remaining/duration:0;if(r<=.10)return 500;if(r>=.30)return 1000;return 1000-500*(.30-r)/.20;}
-  function scheduleTick(){clearTimeout(tickTimer);if(!running||!sound.tickEnabled)return;const interval=tickInterval(),now=performance.now();if(!lastTickAt||now-lastTickAt>=interval){tickSound();lastTickAt=now;}tickTimer=setTimeout(scheduleTick,Math.max(40,interval-(performance.now()-lastTickAt)));}
+  function tickState(){return selectedState()?.running?selectedState():timerStates.find(s=>s.running)||null;}
+  function tickInterval(){const s=tickState(),r=s?.duration?s.remaining/s.duration:0;if(r<=.10)return 500;if(r>=.30)return 1000;return 1000-500*(.30-r)/.20;}
+  function scheduleTick(){clearTimeout(tickTimer);if(!hasRunningTimers()||!sound.tickEnabled)return;const interval=tickInterval(),now=performance.now();if(!lastTickAt||now-lastTickAt>=interval){tickSound();lastTickAt=now;}tickTimer=setTimeout(scheduleTick,Math.max(40,interval-(performance.now()-lastTickAt)));}
   function stopTicker(){clearTimeout(tickTimer);tickTimer=null;lastTickAt=0;}
   function getAlarmBus(){const ctx=getAudio();if(!ctx)return null;if(!alarmBus){alarmBus=ctx.createGain();alarmBus.gain.value=1;alarmLimiter=ctx.createDynamicsCompressor();alarmLimiter.threshold.value=-2;alarmLimiter.knee.value=0;alarmLimiter.ratio.value=20;alarmLimiter.attack.value=.002;alarmLimiter.release.value=.08;alarmBus.connect(alarmLimiter);alarmLimiter.connect(ctx.destination);}return alarmBus;}
   function stopAlarm(){alarmTimeouts.forEach(clearTimeout);alarmTimeouts=[];if(alarmBus&&audioCtx){alarmBus.gain.cancelScheduledValues(audioCtx.currentTime);alarmBus.gain.setTargetAtTime(0,audioCtx.currentTime,.006);}}
   function playAlarmOnce(){const ctx=getAudio(),bus=getAlarmBus();if(!ctx||!bus)return;bus.gain.cancelScheduledValues(ctx.currentTime);bus.gain.setValueAtTime(1,ctx.currentTime);const index=Math.max(0,alarmNames.indexOf(sound.alarmType)),pattern=alarmPatterns[index],wave=gentleAlarmIndexes.has(index)?"sine":index>=12?(index%2?"sawtooth":"square"):"sine",vol=(sound.alarmVolume/100)*.39;let at=ctx.currentTime+.04;pattern.forEach(([f,d])=>{if(f) {tone(f,at,d,vol,wave,f*.98,bus);tone(f*2,at,d*.72,vol*.2,"sine",null,bus);}at+=d+.04;});}
   function playAlarm(){stopAlarm();const count=sound.alarmMode==="once"?1:5,spacing=sound.alarmMode==="long"?1.75:1.65;for(let i=0;i<count;i++)if(i===0)playAlarmOnce();else alarmTimeouts.push(setTimeout(playAlarmOnce,i*spacing*1000));}
-  function start(){if(selectedIndex<0||!duration){setStatus("請先編輯並選擇時間");return;}if(remaining<=0||finished){remaining=duration;finished=false;}getAudio();running=true;endAt=Date.now()+remaining*1000;setStatus("倒數進行中");lastTickAt=0;scheduleTick();acquireWakeLock();cancelAnimationFrame(rafId);loop();render();}
-  function pause(){if(!running)return;remaining=Math.max(0,(endAt-Date.now())/1000);running=false;cancelAnimationFrame(rafId);stopTicker();releaseWakeLock();setStatus("已暫停");render();}
-  function finish(){running=false;finished=true;remaining=0;cancelAnimationFrame(rafId);stopTicker();releaseWakeLock();setStatus("時間到！");render();playAlarm();}
-  function loop(){if(!running)return;remaining=Math.max(0,(endAt-Date.now())/1000);render();if(remaining<=0){finish();return;}rafId=requestAnimationFrame(loop);}
-  function restart(){stopTicker();running=false;finished=false;remaining=duration;cancelAnimationFrame(rafId);releaseWakeLock();setStatus(duration?"重新準備":"請設定時間");render();}
-  function stop(){pause();remaining=duration;finished=false;setStatus(duration?"已結束":"請設定時間");render();}
-  async function acquireWakeLock(){try{if("wakeLock" in navigator)wakeLock=await navigator.wakeLock.request("screen");}catch(_){}}
+  function syncRuntime(){stopTicker();if(hasRunningTimers()){lastTickAt=0;scheduleTick();acquireWakeLock();if(rafId===null)rafId=requestAnimationFrame(loop);}else{if(rafId!==null)cancelAnimationFrame(rafId);rafId=null;releaseWakeLock();}}
+  function start(){if(selectedIndex<0||!timers[selectedIndex]?.seconds){setStatus("請先編輯並選擇時間");return;}startTimer(selectedIndex);}
+  function startTimer(i){const s=timerStates[i],configured=timers[i]?.seconds||0;if(!configured){setStatus("請先編輯這組時間");return;}if(!s.remaining||s.finished){s.duration=configured;s.remaining=configured;s.finished=false;}s.running=true;s.started=true;s.endAt=Date.now()+s.remaining*1000;selectedIndex=i;getAudio();setStatus(`第 ${i+1} 組倒數進行中`);syncRuntime();save();render();}
+  function pause(){if(selectedIndex>=0)pauseTimer(selectedIndex);}
+  function pauseTimer(i){const s=timerStates[i];if(!s?.running)return;s.remaining=Math.max(0,(s.endAt-Date.now())/1000);s.running=false;s.endAt=0;s.started=true;selectedIndex=i;setStatus(`第 ${i+1} 組已暫停`);syncRuntime();save();render();}
+  function loop(){rafId=null;let finishedAny=false;timerStates.forEach(s=>{if(!s.running)return;s.remaining=Math.max(0,(s.endAt-Date.now())/1000);if(s.remaining<=0){s.remaining=0;s.running=false;s.finished=true;s.started=true;s.endAt=0;finishedAny=true;}});if(finishedAny){setStatus("時間到！");playAlarm();}render();if(hasRunningTimers())rafId=requestAnimationFrame(loop);else{stopTicker();releaseWakeLock();}}
+  function restart(){const s=selectedState(),i=selectedIndex;if(!s||i<0||!timers[i]?.seconds){setStatus("請先編輯並選擇時間");return;}s.running=false;s.finished=false;s.started=true;s.duration=timers[i].seconds;s.remaining=s.duration;s.endAt=0;syncRuntime();save();setStatus(`第 ${i+1} 組已重新準備`);render();}
+  function stop(){const s=selectedState(),i=selectedIndex;if(!s||i<0){setStatus("請先選擇時間");return;}s.running=false;s.finished=false;s.started=false;s.duration=timers[i].seconds;s.remaining=s.duration;s.endAt=0;syncRuntime();save();setStatus(`第 ${i+1} 組已結束`);render();}
+  async function acquireWakeLock(){try{if(!wakeLock&&"wakeLock" in navigator)wakeLock=await navigator.wakeLock.request("screen");}catch(_){}}
   function releaseWakeLock(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}}
-  function openTimerEditor(i){editingSlotIndex=i;if(running&&selectedIndex===i)pause();const t=timers[i],wrap=$("timerFields");$("timerDialogTitle").textContent=`設定第 ${i+1} 組時間`;wrap.innerHTML="";const row=document.createElement("div");row.className="timer-edit-row";row.innerHTML=`<label class="field">時<input data-part="h" type="number" min="0" max="99" value="${Math.floor(t.seconds/3600)}"></label><label class="field">分<input data-part="m" type="number" min="0" max="59" value="${Math.floor(t.seconds%3600/60)}"></label><label class="field">秒<input data-part="s" type="number" min="0" max="59" value="${t.seconds%60}"></label>`;wrap.appendChild(row);$("timerDialog").showModal();}
-  $("startPauseBtn").addEventListener("click",()=>running?pause():start());$("restartBtn").addEventListener("click",restart);$("stopBtn").addEventListener("click",stop);
+  function openTimerEditor(i){editingSlotIndex=i;selectedIndex=i;if(timerStates[i].running)pauseTimer(i);const t=timers[i],wrap=$("timerFields");$("timerDialogTitle").textContent=`設定第 ${i+1} 組時間`;wrap.innerHTML="";const row=document.createElement("div");row.className="timer-edit-row";row.innerHTML=`<label class="field">時<input data-part="h" type="number" min="0" max="99" value="${Math.floor(t.seconds/3600)}"></label><label class="field">分<input data-part="m" type="number" min="0" max="59" value="${Math.floor(t.seconds%3600/60)}"></label><label class="field">秒<input data-part="s" type="number" min="0" max="59" value="${t.seconds%60}"></label>`;wrap.appendChild(row);$("timerDialog").showModal();}
+  $("startPauseBtn").addEventListener("click",()=>selectedState()?.running?pause():start());$("restartBtn").addEventListener("click",restart);$("stopBtn").addEventListener("click",stop);
   $("settingsBtn").addEventListener("click",()=>{$("tickEnabled").checked=sound.tickEnabled;$("tickVolume").value=sound.tickVolume;$("tickVolumeText").textContent=sound.tickVolume+"%";$("alarmType").value=sound.alarmType;$("alarmVolume").value=sound.alarmVolume;$("alarmVolumeText").textContent=sound.alarmVolume+"%";$("alarmMode").value=sound.alarmMode;$("clockSize").value=clockSize;$("clockDigitSize").value=textSizes.clockDigit;$("slotDigitSize").value=textSizes.slotDigit;$("controlTextSize").value=textSizes.controlText;$("settingsIconSize").value=textSizes.settingsIcon;settingsSnapshot=JSON.stringify(settingsDraft());$("settingsDialog").showModal();});
   $("settingsDialog").addEventListener("cancel",e=>{e.preventDefault();leaveSettings();});
   $("clockSize").addEventListener("change",()=>{clockSize=$("clockSize").value;applyClockSize();});
@@ -112,11 +127,11 @@
   $("alarmType").innerHTML=alarmNames.map((n,i)=>`<option value="${n}">${String(i+1).padStart(2,"0")} · ${n}</option>`).join("");if(!alarmNames.includes(sound.alarmType))sound.alarmType=alarmNames[0];
   $("tickVolume").addEventListener("input",e=>$("tickVolumeText").textContent=e.target.value+"%");$("alarmVolume").addEventListener("input",e=>$("alarmVolumeText").textContent=e.target.value+"%");
   $("testAlarmBtn").addEventListener("click",()=>{const oldSound=sound;sound={...sound,alarmType:$("alarmType").value,alarmVolume:Number($("alarmVolume").value)};playAlarmOnce();sound=oldSound;});
-  $("timerForm").addEventListener("submit",e=>{if(e.submitter&&e.submitter.id!=="saveTimersBtn")return;const v=p=>Number($("timerFields").querySelector(`[data-part="${p}"]`).value)||0;const seconds=Math.max(0,Math.min(99,v("h")))*3600+Math.max(0,Math.min(59,v("m")))*60+Math.max(0,Math.min(59,v("s")));timers[editingSlotIndex]={seconds};if(selectedIndex===editingSlotIndex){if(seconds){duration=remaining=seconds;}else{selectedIndex=-1;duration=remaining=0;finished=false;}}save();renderSlots();setStatus("時間已儲存");$("timerDialog").close();});
+  $("timerForm").addEventListener("submit",e=>{if(e.submitter&&e.submitter.id!=="saveTimersBtn")return;const v=p=>Number($("timerFields").querySelector(`[data-part="${p}"]`).value)||0;const seconds=Math.max(0,Math.min(99,v("h")))*3600+Math.max(0,Math.min(59,v("m")))*60+Math.max(0,Math.min(59,v("s")));timers[editingSlotIndex]={seconds};const s=timerStates[editingSlotIndex];s.duration=seconds;s.remaining=seconds;s.running=false;s.finished=false;s.started=false;s.endAt=0;selectedIndex=seconds?editingSlotIndex:-1;syncRuntime();save();renderSlots();setStatus("時間已儲存");$("timerDialog").close();});
   $("themeButtons").innerHTML=themes.map((t,i)=>`<button type="button" class="theme-swatch${i===themeIndex?" active":""}" style="--swatch:${t.bg}" title="${t.name}" aria-label="${t.name}" data-theme="${i}"></button>`).join("");
   $("themeButtons").addEventListener("click",e=>{const b=e.target.closest("[data-theme]");if(!b)return;themeIndex=Number(b.dataset.theme);document.querySelectorAll("[data-theme]").forEach(x=>x.classList.toggle("active",Number(x.dataset.theme)===themeIndex));render();});
   window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstall=e;$("installBtn").classList.remove("hidden");});$("installBtn").addEventListener("click",async()=>{if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;$("installBtn").classList.add("hidden");});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&running){remaining=Math.max(0,(endAt-Date.now())/1000);if(remaining<=0)finish();else render();}});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&hasRunningTimers()){if(rafId!==null)cancelAnimationFrame(rafId);rafId=requestAnimationFrame(loop);}});
   window.addEventListener("resize",()=>render());
   document.addEventListener("pointerdown",e=>{if(e.target.closest("button"))stopAlarm();},true);
   document.addEventListener("click",e=>{if(e.target.closest("button"))stopAlarm();},true);
